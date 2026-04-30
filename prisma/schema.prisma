@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum HealthStatus {
+  ONLINE
+  OFFLINE
+}
+
+enum IconSource {
+  bundled
+  uploaded
+  remote
+}
+
+model Category {
+  id         String          @id @default(cuid())
+  name       String
+  icon       String?
+  sortOrder  Int             @default(0)
+  items      DashboardItem[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
+
+model DashboardItem {
+  id                   String              @id @default(cuid())
+  categoryId           String
+  category             Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title                String
+  description          String?
+  icon                 String?
+  url                  String
+  healthCheckUrl       String?
+  sortOrder            Int                 @default(0)
+  checkIntervalSeconds Int                 @default(60)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  healthResults        HealthCheckResult[]
+}
+
+model HealthCheckResult {
+  id              String        @id @default(cuid())
+  dashboardItemId String
+  dashboardItem   DashboardItem @relation(fields: [dashboardItemId], references: [id], onDelete: Cascade)
+  checkedAt       DateTime      @default(now())
+  status          HealthStatus
+  latencyMs       Int?
+  statusCode      Int?
+  errorMessage    String?
+
+  @@index([dashboardItemId, checkedAt])
+}
+
+model AppSettings {
+  id                  String   @id @default("default")
+  themeDefault        String   @default("system")
+  backgroundImagePath String?
+  backgroundOverlay   Float    @default(0.45)
+  dashboardTitle      String   @default("Grid")
+  firstRunComplete    Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  sessions     Session[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+}
+
+model Session {
+  id          String    @id @default(cuid())
+  adminUserId String
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId])
+  @@index([expiresAt])
+}
+
+model IconAsset {
+  id        String     @id @default(cuid())
+  name      String
+  source    IconSource
+  path      String
+  mimeType  String
+  sizeBytes Int
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([source, path])
+}

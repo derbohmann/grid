@@ -1,0 +1,14 @@
+services:
+  grid:
+    build: .
+    image: grid:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      DATABASE_URL: file:/data/app.db
+      DATA_DIR: /data
+      HEALTH_SCHEDULER_INTERVAL_MS: "30000"
+      HEALTH_TIMEOUT_MS: "5000"
+      HEALTH_RETENTION_DAYS: "30"
