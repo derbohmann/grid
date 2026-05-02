@@ -4,11 +4,11 @@ import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { checkItem } from '@/lib/health';
 import { backgroundUploadRoot, iconUploadRoot, publicUploadPath } from '@/lib/paths';
+import { saveToDisk } from '@/lib/saveToDisk';
 import { normalizeUrl } from '@/lib/utils';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import crypto from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 
@@ -45,8 +45,10 @@ async function saveUpload(file: File, directory: string, kind: 'icons' | 'backgr
 
   const extension = path.extname(file.name).toLowerCase() || '.bin';
   const filename = `${crypto.randomUUID()}${extension}`;
-  await mkdir(directory, { recursive: true });
-  await writeFile(path.join(directory, filename), Buffer.from(await file.arrayBuffer()));
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  await saveToDisk(buffer, directory, filename);
 
   return {
     filename,
