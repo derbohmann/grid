@@ -3,7 +3,7 @@ services:
     build: .
     image: grid:latest
     ports:
-      - "3000:3000"
+      - "4000:3000"
     volumes:
       - ./data:/data
     environment:

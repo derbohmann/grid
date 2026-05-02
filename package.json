@@ -9,11 +9,12 @@
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "db:seed": "node prisma/seed.mjs",
-    "docker:start": "sh ./docker-entrypoint.sh"
+    "db:seed": "tsx prisma/seed.ts",
+    "docker:start": "sh ./docker-entrypoint.sh",
+    "build:seed": "tsc -p tsconfig.seed.json"
   },
   "prisma": {
-    "seed": "node prisma/seed.mjs"
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -35,13 +36,14 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.2.4",
-    "@types/node": "25.6.0",
+    "@types/node": "^25.6.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "4.2.4",
-    "tsx": "4.21.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
     "typescript": "6.0.3"
   }
 }

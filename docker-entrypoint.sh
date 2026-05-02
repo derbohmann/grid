@@ -7,6 +7,6 @@ export DATA_DIR="${DATA_DIR:-/data}"
 mkdir -p "$DATA_DIR/uploads/icons" "$DATA_DIR/uploads/backgrounds"
 
 npx prisma migrate deploy
-npm run db:seed
+npx prisma db seed
 
 exec npm start
