@@ -2,12 +2,22 @@ import "server-only";
 
 import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 
-const sessionCookieName = "smart-dashboard-session";
+const sessionCookieName = "grid-session";
 const sessionDays = 14;
+
+async function sessionCookieSecure(): Promise<boolean> {
+  const explicit = process.env.SESSION_COOKIE_SECURE?.toLowerCase();
+  if (explicit === "true") return true;
+  if (explicit === "false") return false;
+
+  const forwarded = (await headers()).get("x-forwarded-proto");
+  if (!forwarded) return false;
+  return forwarded.split(",")[0]?.trim().toLowerCase() === "https";
+}
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -41,7 +51,7 @@ export async function createSession(adminUserId: string) {
   cookieStore.set(sessionCookieName, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: await sessionCookieSecure(),
     path: "/",
     expires: expiresAt
   });
