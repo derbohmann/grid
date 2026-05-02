@@ -60,3 +60,8 @@ export async function logoutAction() {
   await destroySession();
   redirect('/login');
 }
+
+export async function logout() {
+  await destroySession();
+  redirect('/login');
+}

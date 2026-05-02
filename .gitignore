@@ -4,3 +4,4 @@ data
 .env
 .env.local
 *.log
+next-env.d.ts
