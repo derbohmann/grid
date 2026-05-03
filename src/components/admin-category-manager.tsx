@@ -138,7 +138,7 @@ function SortableCategorySection({
       className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900"
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 items-start gap-2">
+        <div className="flex min-w-0 flex-1 items-start sm:gap-2">
           <button
             ref={setActivatorNodeRef}
             type="button"
@@ -152,45 +152,48 @@ function SortableCategorySection({
           <div className="min-w-0 flex-1">
             {!isEditing ? (
               <div
-                className="group flex w-full flex-wrap items-center gap-3 rounded-xl px-2 py-1 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
+                className="group flex w-full flex-wrap items-center gap-3 rounded-xl sm:px-2 sm:py-1 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
                 onClick={onToggleExpanded}
               >
-                <IconView icon={category.icon} alt="" className="h-10 w-10 shrink-0" />
-                <h2 className="text-2xl font-black">{category.name}</h2>
-                {expanded && (
-                  <div className="shrink-0 flex items-center gap-2 ml-auto">
-                    <input type="hidden" name="id" value={category.id} />
-                    {!isEditing && (
+                <div className="flex flex-wrap sm:items-center gap-x-3 gap-y-2 flex-1">
+                  <div className="flex items-center gap-3">
+                    <IconView icon={category.icon} alt="" className="h-10 w-10 shrink-0" />
+                    <h2 className="text-2xl font-black">{category.name}</h2>
+                  </div>
+                  {expanded && (
+                    <div className="shrink-0 flex items-center gap-2 order-3 sm:order-2 ml-auto">
+                      {!isEditing && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary text-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingId(category.id);
+                          }}
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                          Edit
+                        </button>
+                      )}
                       <button
+                        className="btn btn-danger-outline text-sm"
                         type="button"
-                        className="btn btn-secondary text-sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setEditingId(category.id);
+                          setConfirmingDelete(true);
                         }}
                       >
-                        <PencilIcon className="h-4 w-4" />
-                        Edit
+                        <Trash2 className="h-4 w-4" />
+                        Delete
                       </button>
-                    )}
-                    <button
-                      className="btn btn-danger-outline text-sm"
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setConfirmingDelete(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </button>
 
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
                 <ChevronDown
                   className={cn(
-                    "h-6 w-6 shrink-0 transition-transform text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200",
-                    expanded ? "rotate-180" : "ml-auto "
+                    "h-6 w-6 shrink-0 transition-transform text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-200 order-2 sm:order-3",
+                    expanded ? "ml-auto sm:ml-0 rotate-180" : "ml-auto "
                   )}
                 />
               </div>
@@ -291,7 +294,7 @@ function SortableCategorySection({
       {expanded ? (
         <>
           <SortableContext items={itemIds} strategy={rectSortingStrategy}>
-            <div className="mt-8 grid gap-6 xl:grid-cols-2 items-start">
+            <div className="mt-8 grid gap-x-6 gap-y-2 xl:grid-cols-2 items-start">
               {category.items.map((item, itemIndex) => (
                 <SortableItemCard
                   key={item.id}
@@ -319,7 +322,7 @@ function SortableCategorySection({
                 const fd = new FormData(e.currentTarget);
                 await saveItemAction(fd);
                 onCloseAddItem();
-                e.currentTarget.reset();
+                e.target.reset();
               }}
             >
               <h3 className="font-black">Add item to {category.name}</h3>
@@ -414,9 +417,9 @@ function SortableItemCard({
     <article
       ref={setNodeRef}
       style={style}
-      className="rounded-2xl border border-slate-200 p-3 dark:border-slate-700"
+      className="rounded-2xl border border-slate-200 p-3 dark:border-slate-700 overflow-hidden"
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-2 sm:gap-4">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <button
             ref={setActivatorNodeRef}
@@ -430,16 +433,16 @@ function SortableItemCard({
           </button>
           <button
             type="button"
-            className="min-w-0 flex-1 rounded-xl px-3 py-1.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
+            className="min-w-0 flex-1 rounded-xl sm:px-3 sm:py-1.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer"
             onClick={onToggleExpand}
           >
             <div className="flex min-w-0 items-center gap-3">
-              <IconView icon={item.icon} alt="" className="h-10 w-10 shrink-0" />
+              <IconView icon={item.icon} alt="" className="h-8 w-8 sm:h-10 sm:w-10 shrink-0" />
               <div className="min-w-0 mr-auto">
                 <h3 className="font-black">{item.title}</h3>
                 <p className="truncate text-sm text-slate-500">{item.url}</p>
               </div>
-              <ChevronDown className={cn("h-6 w-6 transition-transform", expanded ? "rotate-180" : "")} />
+              <ChevronDown className={cn("h-6 w-6 transition-transform shrink-0", expanded ? "rotate-180" : "")} />
             </div>
           </button>
         </div>

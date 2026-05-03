@@ -61,7 +61,7 @@ export default async function DashboardPage() {
           </div>
         </header>
 
-        <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <section className="mx-auto grid max-w-7xl gap-6 md:gap-y-8 lg:grid-cols-2 xl:grid-cols-3">
           {categories.map((category) => (
             <div key={category.id} className="space-y-4">
               <div className="flex items-center gap-3 px-1 text-slate-900 dark:text-white">
@@ -69,7 +69,7 @@ export default async function DashboardPage() {
                 <h2 className="text-xl font-black">{category.name}</h2>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid gap-2">
                 {category.items.map((item) => (
                   <ServiceCard
                     key={item.id}

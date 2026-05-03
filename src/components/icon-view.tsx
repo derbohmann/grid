@@ -19,7 +19,7 @@ export function IconView({
 
   if (LucideCmp) {
     return (
-      <span className={cn("grid place-items-center text-slate-700 dark:text-slate-200", className)}>
+      <span className={cn("grid place-items-center text-slate-700 dark:text-slate-200 rounded-xl dark:bg-white/15 bg-slate-900/10", className)}>
         <LucideCmp className="h-[55%] w-[55%]" aria-hidden />
         {alt ? <span className="sr-only">{alt}</span> : null}
       </span>
