@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - '**'
   pull_request:
     branches:
       - main
@@ -21,9 +21,9 @@ jobs:
     env:
       DATABASE_URL: file:./ci.db
       # Reduce flakes when the registry is slow (hangs often look like stuck npm ci)
-      NPM_CONFIG_FETCH_RETRIES: "5"
-      NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: "20000"
-      NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: "120000"
+      NPM_CONFIG_FETCH_RETRIES: '5'
+      NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: '20000'
+      NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: '120000'
 
     steps:
       - name: Checkout
@@ -64,6 +64,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Read app version from package.json
+        id: app_version
+        run: echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -72,6 +76,7 @@ jobs:
           tags: |
             type=sha,format=short,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.app_version.outputs.version }},enable={{is_default_branch}}
 
       - name: Build and push image
         uses: docker/build-push-action@v6
