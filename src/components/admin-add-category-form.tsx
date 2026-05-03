@@ -24,6 +24,7 @@ export function AdminAddCategoryForm({ icons, sortOrder }: Props) {
         const fd = new FormData(e.currentTarget);
         startTransition(async () => {
           await saveCategoryAction(fd);
+          e.target.reset();
           router.refresh();
         });
       }}
