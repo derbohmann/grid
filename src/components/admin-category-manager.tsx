@@ -34,7 +34,7 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { HealthStatus } from "@prisma/client";
+import type { HealthStatus } from "@prisma/client";
 import { ChevronDown, GripVertical, PencilIcon, RefreshCcw, SaveIcon, Trash2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
@@ -99,7 +99,7 @@ function chartDataForItem(item: AdminItem): AdminHealthPoint[] {
     .map((result) => ({
       checkedAt: formatDateTime(new Date(result.checkedAt)),
       latencyMs: result.latencyMs,
-      online: result.status === HealthStatus.ONLINE ? 1 : 0
+      online: result.status === "ONLINE" ? 1 : 0
     }));
 }
 
