@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
@@ -32,6 +33,7 @@
     "react": "19.2.5",
     "react-dom": "19.2.5",
     "recharts": "3.8.1",
+    "sonner": "^2.0.3",
     "zod": "4.3.6"
   },
   "devDependencies": {

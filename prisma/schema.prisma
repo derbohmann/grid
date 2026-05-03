@@ -36,6 +36,7 @@ model DashboardItem {
   icon                 String?
   url                  String
   healthCheckUrl       String?
+  openInNewTab         Boolean             @default(true)
   sortOrder            Int                 @default(0)
   checkIntervalSeconds Int                 @default(60)
   createdAt            DateTime            @default(now())

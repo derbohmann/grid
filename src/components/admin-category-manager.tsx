@@ -36,7 +36,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { HealthStatus } from "@prisma/client";
 import { ChevronDown, GripVertical, PencilIcon, RefreshCcw, SaveIcon, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 export type AdminHealthPoint = {
   checkedAt: string;
@@ -52,6 +52,7 @@ export type AdminItem = {
   icon: string | null;
   url: string;
   healthCheckUrl: string | null;
+  openInNewTab: boolean;
   sortOrder: number;
   checkIntervalSeconds: number;
   healthResults: Array<{
@@ -68,6 +69,29 @@ export type AdminCategory = {
   sortOrder: number;
   items: AdminItem[];
 };
+
+function categoriesStructureSnapshot(cats: AdminCategory[]): string {
+  return JSON.stringify(
+    cats.map((c) => ({
+      id: c.id,
+      name: c.name,
+      icon: c.icon,
+      sortOrder: c.sortOrder,
+      items: c.items.map((i) => ({
+        id: i.id,
+        categoryId: i.categoryId,
+        title: i.title,
+        description: i.description,
+        icon: i.icon,
+        url: i.url,
+        healthCheckUrl: i.healthCheckUrl,
+        openInNewTab: i.openInNewTab,
+        sortOrder: i.sortOrder,
+        checkIntervalSeconds: i.checkIntervalSeconds
+      }))
+    }))
+  );
+}
 
 function chartDataForItem(item: AdminItem): AdminHealthPoint[] {
   return [...item.healthResults]
@@ -340,6 +364,18 @@ function SortableCategorySection({
               <FloatingField label="Health check URL">
                 <input className="field" name="healthCheckUrl" placeholder="Optional health check URL" />
               </FloatingField>
+
+              <fieldset className="grid gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-600">
+                <legend className="text-sm font-semibold px-1">Open service link</legend>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input type="radio" name="openInNewTab" value="true" defaultChecked />
+                  New tab
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input type="radio" name="openInNewTab" value="false" />
+                  Same tab
+                </label>
+              </fieldset>
               <div className="grid gap-3 sm:grid-cols-2">
                 <FloatingField label="Sort order" defaultFilled>
                   <input
@@ -412,6 +448,7 @@ function SortableItemCard({
 
   const latest = item.healthResults[0];
   const chart = chartDataForItem(item);
+  const hasHealthUrl = Boolean((item.healthCheckUrl ?? "").trim());
 
   return (
     <article
@@ -447,7 +484,7 @@ function SortableItemCard({
           </button>
         </div>
         <div className="flex items-center justify-center">
-          <StatusDot status={latest?.status} />
+          <StatusDot status={latest?.status} monitoringEnabled={hasHealthUrl} />
         </div>
       </div>
 
@@ -501,6 +538,17 @@ function SortableItemCard({
                 placeholder="Health check URL"
               />
             </FloatingField>
+            <fieldset className="grid gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-600">
+              <legend className="text-sm font-semibold px-1">Open service link</legend>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input type="radio" name="openInNewTab" value="true" defaultChecked={item.openInNewTab} />
+                New tab
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <input type="radio" name="openInNewTab" value="false" defaultChecked={!item.openInNewTab} />
+                Same tab
+              </label>
+            </fieldset>
             <FloatingField label="Check interval seconds" defaultFilled>
               <input
                 className="field"
@@ -528,9 +576,15 @@ function SortableItemCard({
 
           <div className="mt-3 flex flex-wrap gap-3">
 
-            <button className="btn btn-secondary" type="button" onClick={() => {
-              void onRunCheck(item.id);
-            }}>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              disabled={!hasHealthUrl}
+              title={hasHealthUrl ? undefined : "Set a health check URL to run checks"}
+              onClick={() => {
+                void onRunCheck(item.id);
+              }}
+            >
               <RefreshCcw className="h-4 w-4" />
               Check now
             </button>
@@ -561,6 +615,51 @@ export function AdminCategoryManager({
   );
   const [addingItemCategoryIds, setAddingItemCategoryIds] = useState<Set<string>>(() => new Set());
   const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(() => new Set());
+
+  const initialCategoriesRef = useRef(initialCategories);
+  const categoriesRef = useRef(categories);
+
+  useLayoutEffect(() => {
+    initialCategoriesRef.current = initialCategories;
+  }, [initialCategories]);
+
+  useLayoutEffect(() => {
+    categoriesRef.current = categories;
+  }, [categories]);
+
+  const structureSnapshot = useMemo(
+    () => categoriesStructureSnapshot(initialCategories),
+    [initialCategories]
+  );
+
+  useEffect(() => {
+    const fresh = initialCategoriesRef.current;
+    const prev = categoriesRef.current;
+    const prevCatIds = new Set(prev.map((c) => c.id));
+    const freshCatIds = new Set(fresh.map((c) => c.id));
+    const sameCategoryIdSet =
+      prevCatIds.size === freshCatIds.size && [...prevCatIds].every((id) => freshCatIds.has(id));
+
+    setCategories(fresh);
+
+    if (sameCategoryIdSet) {
+      setExpandedCategoryIds((exp) => new Set([...exp].filter((id) => freshCatIds.has(id))));
+    } else {
+      setExpandedCategoryIds(new Set(fresh.map((c) => c.id)));
+    }
+
+    setExpandedItemIds((prevExp) => {
+      const valid = new Set(fresh.flatMap((c) => c.items.map((i) => i.id)));
+      return new Set([...prevExp].filter((id) => valid.has(id)));
+    });
+    setAddingItemCategoryIds((prevAdd) => {
+      const valid = new Set(fresh.map((c) => c.id));
+      return new Set([...prevAdd].filter((id) => valid.has(id)));
+    });
+    setEditingCategoryId((prevEdit) =>
+      prevEdit && fresh.some((c) => c.id === prevEdit) ? prevEdit : null
+    );
+  }, [structureSnapshot]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

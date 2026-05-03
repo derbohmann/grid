@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SonnerToaster } from "@/components/sonner-toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { getSettings } from "@/lib/settings";
 import { startHealthScheduler } from "@/lib/scheduler";
@@ -21,7 +22,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider defaultTheme={settings.themeDefault}>{children}</ThemeProvider>
+        <ThemeProvider defaultTheme={settings.themeDefault}>
+          {children}
+          <SonnerToaster />
+        </ThemeProvider>
       </body>
     </html>
   );

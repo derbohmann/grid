@@ -35,7 +35,9 @@ export function ServiceCard({
   description,
   icon,
   url,
-  status
+  status,
+  healthMonitoringEnabled,
+  openInNewTab
 }: {
   id: string;
   title: string;
@@ -43,6 +45,8 @@ export function ServiceCard({
   icon?: string | null;
   url: string;
   status?: HealthStatus | null;
+  healthMonitoringEnabled: boolean;
+  openInNewTab: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [range, setRange] = useState<RangeKey>("7d");
@@ -108,8 +112,7 @@ export function ServiceCard({
           aria-label={`Open ${title}`}
           className="absolute inset-0 rounded-2xl"
           href={url}
-          target="_blank"
-          rel="noreferrer"
+          {...(openInNewTab ? { target: "_blank", rel: "noreferrer" } : {})}
         />
         <IconView icon={icon} alt="" className="pointer-events-none relative z-10 h-11 w-11 shrink-0" />
         <span className="pointer-events-none relative z-10 min-w-0">
@@ -117,12 +120,20 @@ export function ServiceCard({
           {description ? <span className="block truncate text-sm text-slate-600 dark:text-slate-300">{description}</span> : null}
         </span>
         <button
-          aria-label={`Show uptime chart for ${title}`}
-          className="absolute right-4 top-3 z-20 flex shrink-0 cursor-pointer items-center justify-center rounded-full p-1 transition hover:bg-slate-900/10 dark:hover:bg-white/10"
+          aria-label={
+            healthMonitoringEnabled ? `Show uptime chart for ${title}` : `Health monitoring disabled for ${title}`
+          }
+          className={cn(
+            "absolute right-4 top-3 z-20 flex shrink-0 items-center justify-center rounded-full p-1 transition",
+            healthMonitoringEnabled
+              ? "cursor-pointer hover:bg-slate-900/10 dark:hover:bg-white/10"
+              : "cursor-default opacity-70"
+          )}
           type="button"
-          onClick={openDialog}
+          onClick={healthMonitoringEnabled ? openDialog : undefined}
+          disabled={!healthMonitoringEnabled}
         >
-          <StatusDot status={status} />
+          <StatusDot status={status} monitoringEnabled={healthMonitoringEnabled} />
         </button>
       </div>
 

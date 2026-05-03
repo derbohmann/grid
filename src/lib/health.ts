@@ -10,7 +10,10 @@ export async function checkItem(itemId: string) {
     return null;
   }
 
-  const target = item.url;
+  const target = item.healthCheckUrl?.trim();
+  if (!target) {
+    return null;
+  }
   const started = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -60,8 +63,10 @@ export async function runDueHealthChecks() {
     },
   });
 
+  const monitored = items.filter((item) => Boolean(item.healthCheckUrl?.trim()));
+
   const now = Date.now();
-  const dueItems = items.filter((item) => {
+  const dueItems = monitored.filter((item) => {
     const latest = item.healthResults[0];
     if (!latest) {
       return true;

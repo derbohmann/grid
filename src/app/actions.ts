@@ -27,9 +27,40 @@ const itemSchema = z.object({
   icon: z.string().trim().optional(),
   url: z.string().trim().min(1),
   healthCheckUrl: z.string().trim().optional(),
+  openInNewTab: z.boolean().default(true),
   sortOrder: z.coerce.number().int().default(0),
   checkIntervalSeconds: z.coerce.number().int().min(15).default(60),
 });
+
+function parseOpenInNewTabFromForm(formData: FormData): boolean {
+  return getString(formData, 'openInNewTab') !== 'false';
+}
+
+const gridBackupItemSchema = z.object({
+  title: z.string().trim().min(1).max(500),
+  description: z.string().trim().max(2000).nullable().optional(),
+  icon: z.string().trim().max(500).nullable().optional(),
+  url: z.string().trim().min(1).max(4000),
+  healthCheckUrl: z.string().trim().max(4000).nullable().optional(),
+  sortOrder: z.coerce.number().int().default(0),
+  checkIntervalSeconds: z.coerce.number().int().min(15).max(86_400).default(60),
+  openInNewTab: z.boolean().default(true),
+});
+
+const gridBackupCategorySchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  icon: z.string().trim().max(500).nullable().optional(),
+  sortOrder: z.coerce.number().int().default(0),
+  items: z.array(gridBackupItemSchema).max(500),
+});
+
+const gridBackupFileSchema = z.object({
+  schemaVersion: z.literal(1),
+  exportedAt: z.string().optional(),
+  categories: z.array(gridBackupCategorySchema).max(200),
+});
+
+const MAX_IMPORT_JSON_BYTES = 2_000_000;
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -152,6 +183,7 @@ export async function deleteCategoryAction(id: string) {
 }
 
 export async function saveItemAction(formData: FormData) {
+  console.log('saveItemAction', formData);
   await requireAdmin();
   const input = itemSchema.parse({
     id: getString(formData, 'id') || undefined,
@@ -161,6 +193,7 @@ export async function saveItemAction(formData: FormData) {
     icon: getString(formData, 'icon') || undefined,
     url: normalizeUrl(getString(formData, 'url')),
     healthCheckUrl: getString(formData, 'healthCheckUrl') ? normalizeUrl(getString(formData, 'healthCheckUrl')) : undefined,
+    openInNewTab: parseOpenInNewTabFromForm(formData),
     sortOrder: getString(formData, 'sortOrder') || '0',
     checkIntervalSeconds: getString(formData, 'checkIntervalSeconds') || '60',
   });
@@ -228,6 +261,94 @@ export async function reorderItemsAction(categoryId: string, ids: string[]) {
 
   await prisma.$transaction(parsed.map((id, index) => prisma.dashboardItem.update({ where: { id }, data: { sortOrder: index } })));
 
+  revalidatePath('/');
+  revalidatePath('/admin');
+}
+
+export async function exportGridDataAction(): Promise<string> {
+  await requireAdmin();
+  const categories = await prisma.category.findMany({
+    orderBy: { sortOrder: 'asc' },
+    include: {
+      items: { orderBy: { sortOrder: 'asc' } },
+    },
+  });
+
+  const payload = {
+    schemaVersion: 1 as const,
+    exportedAt: new Date().toISOString(),
+    categories: categories.map((c) => ({
+      name: c.name,
+      icon: c.icon,
+      sortOrder: c.sortOrder,
+      items: c.items.map((i) => ({
+        title: i.title,
+        description: i.description,
+        icon: i.icon,
+        url: i.url,
+        healthCheckUrl: i.healthCheckUrl,
+        sortOrder: i.sortOrder,
+        checkIntervalSeconds: i.checkIntervalSeconds,
+        openInNewTab: i.openInNewTab,
+      })),
+    })),
+  };
+
+  return JSON.stringify(payload, null, 2);
+}
+
+export async function importGridDataAction(jsonText: string) {
+  await requireAdmin();
+  if (jsonText.length > MAX_IMPORT_JSON_BYTES) {
+    throw new Error('Import file is too large.');
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonText) as unknown;
+  } catch {
+    throw new Error('Invalid JSON.');
+  }
+
+  const parsedFile = gridBackupFileSchema.safeParse(parsed);
+  if (!parsedFile.success) {
+    const detail = parsedFile.error.issues.map((i) => `${i.path.join('.') || 'root'}: ${i.message}`).join('; ');
+    throw new Error(`Invalid backup file: ${detail}`);
+  }
+  const data = parsedFile.data;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.category.deleteMany({});
+    for (const cat of data.categories) {
+      await tx.category.create({
+        data: {
+          name: cat.name,
+          icon: cat.icon ?? null,
+          sortOrder: cat.sortOrder,
+          items: {
+            create: cat.items.map((it) => ({
+              title: it.title,
+              description: it.description ?? null,
+              icon: it.icon ?? null,
+              url: normalizeUrl(it.url),
+              healthCheckUrl: it.healthCheckUrl?.trim() ? normalizeUrl(it.healthCheckUrl) : null,
+              sortOrder: it.sortOrder,
+              checkIntervalSeconds: it.checkIntervalSeconds,
+              openInNewTab: it.openInNewTab,
+            })),
+          },
+        },
+      });
+    }
+  });
+
+  revalidatePath('/');
+  revalidatePath('/admin');
+}
+
+export async function deleteAllGridDataAction() {
+  await requireAdmin();
+  await prisma.category.deleteMany({});
   revalidatePath('/');
   revalidatePath('/admin');
 }

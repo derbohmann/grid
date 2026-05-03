@@ -70,17 +70,22 @@ export default async function DashboardPage() {
               </div>
 
               <div className="grid gap-2">
-                {category.items.map((item) => (
-                  <ServiceCard
-                    key={item.id}
-                    id={item.id}
-                    title={item.title}
-                    description={item.description}
-                    icon={item.icon}
-                    url={item.url}
-                    status={item.healthResults[0]?.status}
-                  />
-                ))}
+                {category.items.map((item) => {
+                  const healthMonitoringEnabled = Boolean(item.healthCheckUrl?.trim());
+                  return (
+                    <ServiceCard
+                      key={item.id}
+                      id={item.id}
+                      title={item.title}
+                      description={item.description}
+                      icon={item.icon}
+                      url={item.url}
+                      healthMonitoringEnabled={healthMonitoringEnabled}
+                      status={healthMonitoringEnabled ? item.healthResults[0]?.status : null}
+                      openInNewTab={item.openInNewTab}
+                    />
+                  );
+                })}
               </div>
             </div>
           ))}

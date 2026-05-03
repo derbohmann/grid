@@ -1,5 +1,6 @@
 import { AdminAddCategoryForm } from "@/components/admin-add-category-form";
 import { AdminAppearancePanel } from "@/components/admin-appearance-panel";
+import { AdminBackupPanel } from "@/components/admin-backup-panel";
 import { AdminCategoryManager } from "@/components/admin-category-manager";
 import { AdminIconLibraryPanel } from "@/components/admin-icon-library-panel";
 import { LogoutButton } from "@/components/logout-button";
@@ -60,24 +61,14 @@ export default async function AdminPage() {
           <AdminIconLibraryPanel icons={icons} />
         </section>
 
+        <AdminBackupPanel />
+
         <section className="rounded-3xl bg-white p-6 shadow-sm dark:bg-slate-900">
           <h2 className="text-xl font-black">Add category</h2>
           <AdminAddCategoryForm icons={icons} sortOrder={categories.length} />
         </section>
 
         <AdminCategoryManager
-          key={categories
-            .map(
-              (c) =>
-                `${c.id}:${c.sortOrder}:${c.updatedAt.getTime()}-` +
-                c.items
-                  .map(
-                    (i) =>
-                      `${i.id}:${i.sortOrder}:${i.updatedAt.getTime()}:${i.categoryId}:${i.title}:${i.icon ?? ""}:${i.healthResults[0]?.checkedAt?.getTime() ?? 0}`
-                  )
-                  .join(".")
-            )
-            .join("|")}
           initialCategories={categories}
           iconAssets={icons}
         />
