@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/db';
+import { dispatchHealthAlertsIfNeeded } from '@/lib/health-notify';
+import type { DashboardItem, HealthCheckResult } from '@prisma/client';
 import { HealthStatus } from '@prisma/client';
 
 const timeoutMs = Number(process.env.HEALTH_TIMEOUT_MS ?? 5000);
@@ -25,6 +27,12 @@ async function probeTarget(target: string, signal: AbortSignal) {
   return getResponse;
 }
 
+function queueHealthAlerts(item: DashboardItem, previous: HealthCheckResult | null, created: HealthCheckResult) {
+  void dispatchHealthAlertsIfNeeded({ item, previous, created }).catch((e) => {
+    console.error('[health-notify]', e);
+  });
+}
+
 export async function checkItem(itemId: string) {
   const item = await prisma.dashboardItem.findUnique({ where: { id: itemId } });
   if (!item) {
@@ -35,6 +43,12 @@ export async function checkItem(itemId: string) {
   if (!target) {
     return null;
   }
+
+  const previous = await prisma.healthCheckResult.findFirst({
+    where: { dashboardItemId: item.id },
+    orderBy: { checkedAt: 'desc' },
+  });
+
   const started = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -44,7 +58,7 @@ export async function checkItem(itemId: string) {
     const latencyMs = Date.now() - started;
     const online = (response.status >= 200 && response.status < 400) || response.status === 401;
 
-    return prisma.healthCheckResult.create({
+    const created = await prisma.healthCheckResult.create({
       data: {
         dashboardItemId: item.id,
         checkedAt: new Date(),
@@ -54,9 +68,11 @@ export async function checkItem(itemId: string) {
         errorMessage: online ? null : `HTTP ${response.status}`,
       },
     });
+    queueHealthAlerts(item, previous, created);
+    return created;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    return prisma.healthCheckResult.create({
+    const created = await prisma.healthCheckResult.create({
       data: {
         dashboardItemId: item.id,
         checkedAt: new Date(),
@@ -65,6 +81,8 @@ export async function checkItem(itemId: string) {
         errorMessage: message,
       },
     });
+    queueHealthAlerts(item, previous, created);
+    return created;
   } finally {
     clearTimeout(timeout);
   }

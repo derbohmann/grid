@@ -36,6 +36,7 @@ model DashboardItem {
   icon                 String?
   url                  String
   healthCheckUrl       String?
+  healthFailureNotify  Boolean             @default(false)
   openInNewTab         Boolean             @default(true)
   sortOrder            Int                 @default(0)
   checkIntervalSeconds Int                 @default(60)
@@ -58,14 +59,19 @@ model HealthCheckResult {
 }
 
 model AppSettings {
-  id                  String   @id @default("default")
-  themeDefault        String   @default("system")
-  backgroundImagePath String?
-  backgroundOverlay   Float    @default(0.45)
-  dashboardTitle      String   @default("Grid")
-  firstRunComplete    Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                         String   @id @default("default")
+  themeDefault               String   @default("system")
+  backgroundImagePath        String?
+  backgroundOverlay          Float    @default(0.45)
+  dashboardTitle             String   @default("Grid")
+  healthNotifyWebhookEnabled Boolean  @default(false)
+  healthNotifyWebhookUrl     String?
+  healthNotifyEmailEnabled   Boolean  @default(false)
+  healthNotifyEmailTo        String?
+  healthNotifyOnRecovery     Boolean  @default(false)
+  firstRunComplete           Boolean  @default(false)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
 }
 
 model AdminUser {

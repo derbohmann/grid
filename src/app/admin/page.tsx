@@ -1,6 +1,7 @@
 import { AdminAddCategoryForm } from "@/components/admin-add-category-form";
 import { AdminAppearancePanel } from "@/components/admin-appearance-panel";
 import { AdminBackupPanel } from "@/components/admin-backup-panel";
+import { AdminHealthNotifyPanel } from "@/components/admin-health-notify-panel";
 import { AdminCategoryManager } from "@/components/admin-category-manager";
 import { AdminIconLibraryPanel } from "@/components/admin-icon-library-panel";
 import { LogoutButton } from "@/components/logout-button";
@@ -55,10 +56,20 @@ export default async function AdminPage() {
           </div>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+        <section className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
           <AdminAppearancePanel settings={settings} />
 
           <AdminIconLibraryPanel icons={icons} />
+
+          <AdminHealthNotifyPanel
+            settings={{
+              healthNotifyWebhookEnabled: settings.healthNotifyWebhookEnabled,
+              healthNotifyWebhookUrl: settings.healthNotifyWebhookUrl,
+              healthNotifyEmailEnabled: settings.healthNotifyEmailEnabled,
+              healthNotifyEmailTo: settings.healthNotifyEmailTo,
+              healthNotifyOnRecovery: settings.healthNotifyOnRecovery,
+            }}
+          />
         </section>
 
         <AdminBackupPanel />

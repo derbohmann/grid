@@ -52,6 +52,7 @@ export type AdminItem = {
   icon: string | null;
   url: string;
   healthCheckUrl: string | null;
+  healthFailureNotify: boolean;
   openInNewTab: boolean;
   sortOrder: number;
   checkIntervalSeconds: number;
@@ -85,6 +86,7 @@ function categoriesStructureSnapshot(cats: AdminCategory[]): string {
         icon: i.icon,
         url: i.url,
         healthCheckUrl: i.healthCheckUrl,
+        healthFailureNotify: i.healthFailureNotify,
         openInNewTab: i.openInNewTab,
         sortOrder: i.sortOrder,
         checkIntervalSeconds: i.checkIntervalSeconds
@@ -364,6 +366,10 @@ function SortableCategorySection({
               <FloatingField label="Health check URL">
                 <input className="field" name="healthCheckUrl" placeholder="Optional health check URL" />
               </FloatingField>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                <input type="checkbox" name="healthFailureNotify" value="true" />
+                Notify when this health check fails or recovers (uses Health alerts settings)
+              </label>
 
               <fieldset className="grid gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-600">
                 <legend className="text-sm font-semibold px-1">Open service link</legend>
@@ -538,6 +544,10 @@ function SortableItemCard({
                 placeholder="Health check URL"
               />
             </FloatingField>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+              <input type="checkbox" name="healthFailureNotify" value="true" defaultChecked={item.healthFailureNotify} />
+              Notify when this health check fails or recovers (uses Health alerts settings below)
+            </label>
             <fieldset className="grid gap-2 rounded-xl border border-slate-200 p-3 dark:border-slate-600">
               <legend className="text-sm font-semibold px-1">Open service link</legend>
               <label className="flex cursor-pointer items-center gap-2 text-sm">

@@ -27,6 +27,7 @@ const itemSchema = z.object({
   icon: z.string().trim().optional(),
   url: z.string().trim().min(1),
   healthCheckUrl: z.string().trim().optional(),
+  healthFailureNotify: z.boolean().default(false),
   openInNewTab: z.boolean().default(true),
   sortOrder: z.coerce.number().int().default(0),
   checkIntervalSeconds: z.coerce.number().int().min(15).default(60),
@@ -36,12 +37,22 @@ function parseOpenInNewTabFromForm(formData: FormData): boolean {
   return getString(formData, 'openInNewTab') !== 'false';
 }
 
+function parseCheckboxTrue(formData: FormData, key: string): boolean {
+  const v = getString(formData, key);
+  return v === 'true' || v === 'on';
+}
+
+function parseHealthFailureNotifyFromForm(formData: FormData): boolean {
+  return parseCheckboxTrue(formData, 'healthFailureNotify');
+}
+
 const gridBackupItemSchema = z.object({
   title: z.string().trim().min(1).max(500),
   description: z.string().trim().max(2000).nullable().optional(),
   icon: z.string().trim().max(500).nullable().optional(),
   url: z.string().trim().min(1).max(4000),
   healthCheckUrl: z.string().trim().max(4000).nullable().optional(),
+  healthFailureNotify: z.boolean().default(false),
   sortOrder: z.coerce.number().int().default(0),
   checkIntervalSeconds: z.coerce.number().int().min(15).max(86_400).default(60),
   openInNewTab: z.boolean().default(true),
@@ -102,6 +113,35 @@ export async function saveSettingsAction(formData: FormData) {
       themeDefault: getString(formData, 'themeDefault') || 'system',
       backgroundOverlay: Number(getString(formData, 'backgroundOverlay') || 0.45),
       firstRunComplete: true,
+    },
+  });
+  revalidatePath('/');
+  revalidatePath('/admin');
+}
+
+export async function saveHealthNotifySettingsAction(formData: FormData) {
+  await requireAdmin();
+  const webhookUrlRaw = getString(formData, 'healthNotifyWebhookUrl').trim();
+  await prisma.appSettings.upsert({
+    where: { id: 'default' },
+    update: {
+      healthNotifyWebhookEnabled: parseCheckboxTrue(formData, 'healthNotifyWebhookEnabled'),
+      healthNotifyWebhookUrl: webhookUrlRaw || null,
+      healthNotifyEmailEnabled: parseCheckboxTrue(formData, 'healthNotifyEmailEnabled'),
+      healthNotifyEmailTo: getString(formData, 'healthNotifyEmailTo').trim() || null,
+      healthNotifyOnRecovery: parseCheckboxTrue(formData, 'healthNotifyOnRecovery'),
+    },
+    create: {
+      id: 'default',
+      firstRunComplete: true,
+      dashboardTitle: 'Grid',
+      themeDefault: 'system',
+      backgroundOverlay: 0.45,
+      healthNotifyWebhookEnabled: parseCheckboxTrue(formData, 'healthNotifyWebhookEnabled'),
+      healthNotifyWebhookUrl: webhookUrlRaw || null,
+      healthNotifyEmailEnabled: parseCheckboxTrue(formData, 'healthNotifyEmailEnabled'),
+      healthNotifyEmailTo: getString(formData, 'healthNotifyEmailTo').trim() || null,
+      healthNotifyOnRecovery: parseCheckboxTrue(formData, 'healthNotifyOnRecovery'),
     },
   });
   revalidatePath('/');
@@ -183,7 +223,6 @@ export async function deleteCategoryAction(id: string) {
 }
 
 export async function saveItemAction(formData: FormData) {
-  console.log('saveItemAction', formData);
   await requireAdmin();
   const input = itemSchema.parse({
     id: getString(formData, 'id') || undefined,
@@ -193,6 +232,7 @@ export async function saveItemAction(formData: FormData) {
     icon: getString(formData, 'icon') || undefined,
     url: normalizeUrl(getString(formData, 'url')),
     healthCheckUrl: getString(formData, 'healthCheckUrl') ? normalizeUrl(getString(formData, 'healthCheckUrl')) : undefined,
+    healthFailureNotify: parseHealthFailureNotifyFromForm(formData),
     openInNewTab: parseOpenInNewTabFromForm(formData),
     sortOrder: getString(formData, 'sortOrder') || '0',
     checkIntervalSeconds: getString(formData, 'checkIntervalSeconds') || '60',
@@ -287,6 +327,7 @@ export async function exportGridDataAction(): Promise<string> {
         icon: i.icon,
         url: i.url,
         healthCheckUrl: i.healthCheckUrl,
+        healthFailureNotify: i.healthFailureNotify,
         sortOrder: i.sortOrder,
         checkIntervalSeconds: i.checkIntervalSeconds,
         openInNewTab: i.openInNewTab,
@@ -332,6 +373,7 @@ export async function importGridDataAction(jsonText: string) {
               icon: it.icon ?? null,
               url: normalizeUrl(it.url),
               healthCheckUrl: it.healthCheckUrl?.trim() ? normalizeUrl(it.healthCheckUrl) : null,
+              healthFailureNotify: it.healthFailureNotify,
               sortOrder: it.sortOrder,
               checkIntervalSeconds: it.checkIntervalSeconds,
               openInNewTab: it.openInNewTab,
