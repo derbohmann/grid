@@ -110,7 +110,16 @@ export async function runDueHealthChecks() {
     return now - latest.checkedAt.getTime() >= item.checkIntervalSeconds * 1000;
   });
 
-  await Promise.allSettled(dueItems.map((item) => checkItem(item.id)));
+  // Run checks one at a time so concurrent fetches do not compete for connections
+  // or stretch wall-clock time past per-request timeouts (false offline alerts).
+  for (const item of dueItems) {
+    try {
+      await checkItem(item.id);
+    } catch (e) {
+      console.error('[health] checkItem failed', item.id, e);
+    }
+  }
+
   await cleanupHealthHistory();
 }
 
