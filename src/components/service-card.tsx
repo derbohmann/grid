@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { HealthStatus } from "@prisma/client";
 import { XIcon } from "lucide-react";
 import { useEffect, useState, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 
 type RangeKey = "7d" | "14d" | "30d" | "90d" | "365d" | "all";
 
@@ -150,60 +151,63 @@ export function ServiceCard({
         </button>
       </div>
 
-      {open ? (
-        <div
-          aria-modal="true"
-          className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-sm"
-          role="dialog"
-          onClick={closeDialog}
-        >
-          <div className="flex min-h-dvh w-full items-center justify-center p-4" onClick={closeDialog}>
+      {open
+        ? createPortal(
             <div
-              className="w-full max-w-2xl rounded-3xl border border-white/10 bg-white p-6 text-slate-950 shadow-2xl dark:bg-slate-900 dark:text-slate-50"
-              onClick={(event) => event.stopPropagation()}
+              aria-modal="true"
+              className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/75 backdrop-blur-sm"
+              role="dialog"
+              onClick={closeDialog}
             >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <h3 className="text-xl font-black">{title}</h3>
-                  <p className="truncate text-sm text-slate-500 dark:text-slate-400">{url}</p>
-                </div>
-                <button className="btn-rounded btn-secondary" type="button" onClick={closeDialog}>
-                  <XIcon className="h-4 w-4" />
-                </button>
-              </div>
+              <div className="flex min-h-dvh w-full items-center justify-center p-4" onClick={closeDialog}>
+                <div
+                  className="w-full max-w-2xl rounded-3xl border border-white/10 bg-white p-6 text-slate-950 shadow-2xl dark:bg-slate-900 dark:text-slate-50"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <h3 className="text-xl font-black">{title}</h3>
+                      <p className="truncate text-sm text-slate-500 dark:text-slate-400">{url}</p>
+                    </div>
+                    <button className="btn-rounded btn-secondary" type="button" onClick={closeDialog}>
+                      <XIcon className="h-4 w-4" />
+                    </button>
+                  </div>
 
-              <div className="mt-5 flex flex-wrap gap-2">
-                {ranges.map((option) => (
-                  <button
-                    key={option.value}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-xs font-semibold cursor-pointer",
-                      range === option.value
-                        ? "border border-violet-500 bg-violet-500 text-white"
-                        : "border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {ranges.map((option) => (
+                      <button
+                        key={option.value}
+                        className={cn(
+                          "rounded-full px-3 py-1 text-xs font-semibold cursor-pointer",
+                          range === option.value
+                            ? "border border-violet-500 bg-violet-500 text-white"
+                            : "border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                        )}
+
+                        type="button"
+                        onClick={() => setRange(option.value)}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-6">
+                    {loading ? (
+                      <p className="h-[172px] text-sm text-slate-500 dark:text-slate-400">Loading uptime history...</p>
+                    ) : error ? (
+                      <p className="text-sm font-semibold text-red-600">{error}</p>
+                    ) : (
+                      <HealthChart data={data} durationLabel={getRangeLabel(range)} />
                     )}
-
-                    type="button"
-                    onClick={() => setRange(option.value)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+                  </div>
+                </div>
               </div>
-
-              <div className="mt-6">
-                {loading ? (
-                  <p className="h-[172px] text-sm text-slate-500 dark:text-slate-400">Loading uptime history...</p>
-                ) : error ? (
-                  <p className="text-sm font-semibold text-red-600">{error}</p>
-                ) : (
-                  <HealthChart data={data} durationLabel={getRangeLabel(range)} />
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </>
   );
 }
